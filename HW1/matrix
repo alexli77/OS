@@ -1,0 +1,379 @@
+#!/bin/bash
+
+#hualong li
+#01-28-2019
+
+
+#sources:
+# https://stackoverflow.com/questions/49469076/why-isnt-this-bash-script-running
+# As the counter numbers for a line.
+#https://stackoverflow.com/questions/6980090/how-to-read-from-a-file-or-stdin-in-bash
+
+#the following temp file are copied from the lecture notes, and it will use for trtest
+
+tempCol="tempcolfile"
+tempRow="temprowfile"
+tempMean="tempmeanfile"
+tempSum="tempsumfile"
+
+
+
+# the operations of dims, transpose, mean, add, and multiply will implem
+
+# dims funtion, we need to find the number of lines and numbers on each line.
+
+
+
+dims()
+{
+  rows=0
+
+  while read myLine
+  do
+    rows=$((rows + 1))
+  done <$fileOne   
+  # use a while loop to count lines in a matix, also wc-l also can count lines, but we read here first
+  
+  numcol=$( head -n 1 $fileOne | wc -w) 
+  #count numbers on each line, use the source 1
+
+  echo -e "$rows $numcol"  
+  #passing the matrix
+  echo $rows >> fileOne    
+  #piping the martix
+  echo $numcol >> fileTwo 
+}
+
+  # call the dims funtion with stdout or stderr for dims funtion
+        if [ $1 = "dims" ] 
+    then
+	if (("$#" > 2 ))
+      then
+	      echo "Invalid number of arguments" 1>&2
+          exit 1
+        fi
+	# Dims with 2 arguments should throw error
+
+        if [ ! -f $2 ]
+        then
+          echo "Invalid file" 1>&2        #Redirects stdout to stderr 1>&2
+          exit 1
+      fi
+	# Dims on nonexistent file should throw error
+
+        if [ $# -gt 1 ]
+        then
+           fileOne=$2
+           fileTwo=$3
+         fi
+     # if the arguments passed greater than 1, more than 1 matrix.
+
+        if [ $# -eq 1 ]
+        then
+           fileOne=tmp55
+           cat > $fileOne
+        fi
+    # if only one matrix, get the cat vaule
+
+ if [ $1 = "dims" ]
+      then
+        dims $fileOne
+      fi
+   # call the dims funtion again
+   fi
+#transpose funtions 
+transpose()
+{
+numcol=$( head -n 1 $fileOne | wc -w)
+#get numbers cout for the first line. it is ok to do tail -n 1 also, does not matter.
+
+for i in $(seq 1 $numcol)
+# loop here to run the numbers time
+do
+       cut -f $i $fileOne | paste -s
+
+  done
+}
+
+
+#Executing transpose, simliar to the dim part, just copy from dim and change the name
+    if [ $1 = "transpose" ]
+    then
+
+
+      if (( "$#" > 2 ))
+      then
+          echo "Invalid number of arguments" 1>&2
+          exit 1
+
+        elif [ $# -gt 1 ]
+        then
+           fileOne=$2
+           fileTwo=$3
+
+
+        elif [ $# -eq 1 ]
+        then
+           fileOne=tmp
+           cat > $fileOne
+           #echo "Cat has finished"
+        fi
+
+
+      if [ ! -r $2 ]
+        then
+          echo "Invalid file" 1>&2        #Redirects stdout to stderr 1>&2
+          exit 1
+      fi
+
+      transpose $fileOne
+
+    fi
+
+
+#mean funtion here should work, we need to cut the numbers into column, and then calutate
+#after that we save the result into a new line. 
+
+mean()
+{
+numcol=$( head -n 1 $fileOne | wc -w)
+#get the counts of number of first line
+
+for i in $(seq 1 $numcol)
+#do a loop here for numcol times
+do
+
+
+cut -f $i $fileOne > $tempCol
+#cut the each column into a file 
+    sum=0
+    count=0
+    mean=0
+#init the sum, count, and mean
+
+
+while read rowNum
+  do
+ # a loop for reading all the bumbers from tempCol
+    
+                 sum=$((sum + rowNum))
+  # get the sum calculation               
+
+                ((count++))
+
+  done <$tempCol
+mean=$(((sum + (count/2)*( (sum>0)*2-1 )) / count))
+
+# calculation for mean, it is already provided, just copy it.
+
+echo "$mean" > "$tempMean"
+
+cat $tempMean | tr "\n" "\t" > "$tempRow"
+# translate the column into a row
+
+
+# sed -i 's/[ \t]*$//' to remove the tril tab. I do not know why it does not work,plz tell me why
+# if you read this. This one is from sources that list above, it is to revese the column to cut and
+# then revesers back to get rid of the tail tab.
+
+if [[ $i -eq $numcol ]]
+then
+rev "$tempRow" >"tempPrecut"
+cat "tempPrecut" | cut -c 2- >"tempCut"
+rev "tempCut">$tempRow
+fi
+cat $tempRow
+
+done
+
+}
+
+ #Executing mean, simliar to the dim part, just copy from dim and change the name
+  if  [ $1 = "mean" ]
+    then
+
+
+      if (("$#" > 2 ))
+      then
+          echo "Invalid number of arguments" 1>&2
+          exit 1
+        fi
+
+        if [ $# -gt 1 ]
+        then
+           fileOne=$2
+           fileTwo=$3
+         fi
+
+        if [ $# -eq 1 ]
+        then
+           fileOne=tmp
+           cat > $fileOne
+           #echo "Cat has finished"
+        fi
+
+      if [ ! -f $2 ]
+        then
+          echo "Invalid file" 1>&2        #Redirects stdout to stderr 1>&2
+          exit 1
+      fi
+
+      if [ $1 = "mean" ]
+      then
+	 mean $fileOne
+      fi
+
+    fi
+
+#add funtions: in order to add 2 matrix, we need to take
+
+add(){
+
+
+	# Get numbers of row from left matrix and right matrix.
+	x1=$(wc -l < $1)
+	x2=$(wc -l < $2)
+    
+    # Get numbers of column from left matrix and right matrix.
+
+	y1=$( head -n 1 $1 | wc -w)
+	y2=$( head -n 1 $2 | wc -w)
+
+	# if left and right matrix has the same M*N.
+	if [[ !(($x1 == $x2) && ($y1 == $y2)) ]]
+	then
+		printf "Faild: MxN do not match!\n" >&2
+		exit 1
+	fi
+
+
+
+	 # loop for i times to read the every line
+    for i in $(seq 1 $x1)
+
+	do
+    
+        l1=$(tail -n +$i $1 | head -1 )  #display for line 1
+		l2=$(tail -n +$i $2 | head -1 )  #display for line 2
+        
+        # Dispay lines from arg 1 and 2, also can use tail|head and sed "${NUM}q;d".
+        # Now we loop to read line from left and right, next we need to add lines together.
+  
+  
+        # we need to cut the numbers frist and then add them together 
+    for j in $(seq 1 $y1)
+		do
+             
+            
+		    a=$(cut -d'	' -f$j <<< "$l1") # Cut index j from f1.
+			b=$(cut -d'	' -f$j <<< "$l2") # Cut index j from f2.
+			sum=$((a + b))
+			
+            
+            
+            if [ $j == $y1 ]
+			then
+				printf "%d\n" $sum
+			else
+				printf "%d\t" $sum
+			fi
+		done
+	done
+}
+
+if [ "$1" == "add" ]
+then
+	if [[ "$#" -gt 3 ]]
+	then
+		printf "Failed: too many args.\n" >&2
+		exit 1
+	elif [[ "$#" < 3 ]]
+	then
+		printf "Failed: too few args.\n" >&2
+		exit 1
+	fi
+	
+	add $2 $3
+
+fi
+
+multiply(){
+
+
+	# Get numbers of row from left matrix and right matrix.
+	x1=$(wc -l < $1)
+	x2=$(wc -l < $2)
+    
+    # Get numbers of column from left matrix and right matrix.
+
+	y1=$( head -n 1 $1 | wc -w)
+	y2=$( head -n 1 $2 | wc -w)
+
+	# if left and right matrix has the same M*N.
+	if [[ !($x2 == $y1) ]]
+	then
+		printf "Faild: MxN do not match!\n" >&2
+		exit 1
+	fi
+
+# we transpose the second matrix to a new matrix called f3
+    f3=$(transpose $2)
+    
+# we need to loop display the first lines of first martix
+    
+for i in $(seq 1 $x1)
+
+	do
+    
+    l1=$(tail -n +$i $1 | head -1 )  #display for line 1
+
+    for j in $(seq 1 $y1)
+        
+        do
+
+        l2=$(tail -n +$j $f3 | head -1 )  #display for line 1
+        
+        
+          
+    done    
+    done
+}
+
+if [ "$1" == "multiply" ]
+then
+	if [[ "$#" -gt 3 ]]
+	then
+		printf "Failed: too many args.\n" >&2
+		exit 1
+	elif [[ "$#" < 3 ]]
+	then
+		printf "Failed: too few args.\n" >&2
+		exit 1
+	fi
+	
+	multiply $2 $3
+
+fi
+
+
+
+
+
+
+#if [[ !(($1 = "dims") && ($1 = "transpose") && ($col = "mean")&& ($col = "add")&& ($col = "mulitply")) ]]
+#then
+#printf "ERROR: Not a matrix command!\n" >&2
+#exit 1
+#fi
+#the funtion above does not work, do not know why.
+
+#remove temp files
+rm -f temp55
+rm -f temprowfile
+rm -f tempPrecut
+rm -f tempCut
+rm -f tempcolfile
+rm -f tempfileOne
+rm -f tempfileTwo
+
+

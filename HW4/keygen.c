@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
     
   srand(time(0));
 	int key;
-
+  //ASCII if there is letter, conver it, if it is not,print space
 	for(i; i < keylength; i++)
 	{
 		key = rand() % 27;

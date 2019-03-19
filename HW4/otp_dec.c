@@ -10,9 +10,20 @@
 #include <sys/stat.h>
 
 /*******************************************************************************************************
+       1.List the same helper funtions
+       2.main funtion- setup server
+                     - Authorize server
+                     - open,read,write and close a file.
+*******************************************************************************************************/
+
+
+/*******************************************************************************************************
         some helper funtions. Since it may be used in other file, just list them out. So, we can just copy
         and paste them if we want to use them later. It seems long but it worth.In this file, I copied it from
         otp_ect.c
+        
+    Minor chnage: pTextFP-> cipherTextFP. The rest are exctly same. Do not have to check this one if 
+    check otp_ect.c.
 *******************************************************************************************************/
 
 void error(const char *msg)

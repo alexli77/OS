@@ -10,8 +10,16 @@
 #include <sys/stat.h>
 
 /*******************************************************************************************************
+       1.List the same helper funtions
+       2.main funtion- setup server
+                     - Authorize server
+                     - open,read,write and close a file.
+*******************************************************************************************************/
+
+
+/*******************************************************************************************************
         some helper funtions. Since it may be used in other file, just list them out. So, we can just copy
-        and paste them if we want to use them later. It seems long but it worth.
+        and paste them if we want to use them later. It seems long but it worth. 
 *******************************************************************************************************/
 
 //set up an error message funtion
@@ -135,8 +143,8 @@ int main(int argc, char *argv[])
 	FILE *pTextFP,*keyTextFP; // File pointers
 	
 	/* Open files for reading */
-	pTextFP = fopen(argv[1],"r");	
-	keyTextFP = fopen(argv[2],"r");	
+	pTextFP = fopen(argv[1],"r");	//from assigment 2
+	keyTextFP = fopen(argv[2],"r");	//from assigment 2
 
     
 	// Check that the files 
@@ -163,7 +171,7 @@ int main(int argc, char *argv[])
 	fclose(keyTextFP);
 	
 	//recieving data from server.
-	char cipherText[70000]; //ourchipTest4 can go 69333, we need a bigger number
+	char cipherText[70000]; //ourchipTest4 can go 69333, we need a bigger number, it fails when it belows that num
 	receive(cipherText,sockfd); 
     close(sockfd);
 

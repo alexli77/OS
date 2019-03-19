@@ -63,7 +63,8 @@ void authServer(int sockFD, const char * authCode)//from the Server.c of the lec
    	n = write(sockFD,buffer,strlen(buffer));
 }
 
-
+//https://stackoverflow.com/questions/30877182/sending-files-in-socket-programming-tcp
+//source of receive and send funtion.
 int receive(char str[], int sockFD)//from the Cleint.c of the lecture
 {    
 	char buffer[200]; //get a buffer
@@ -205,7 +206,7 @@ int main(int argc, char *argv[])
 			close(clientSockFD);
 		}
 		else
-		{ // I'm parrent, and my work is done
+		{ 
 			close(clientSockFD);
 		}
 	}
