@@ -12,7 +12,16 @@
 #include <sys/socket.h> 
 #include <netdb.h>
 
-
+/*******************************************************************************************************
+       1.List the same helper funtions
+       2.set up the encrypted funtions
+       3.main funtion- conect to the otp_enc.c
+                     - read and input the letters
+                     - run encrypted
+                     - create the chipper
+                     - write the results to a file
+                     
+*******************************************************************************************************/
 
 
 /*******************************************************************************************************
@@ -29,19 +38,19 @@ void error(const char *msg)
 int sockSetup(int portno) // some part are from client.c and server.c
 {
 	int sockfd;
-    struct sockaddr_in serv_addr;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in serv_addr; //get address
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);//AF_INET refers to addresses from the internet, SOCK_STREAM Provides sequenced
     if (sockfd < 0)error("ERROR opening socket");
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
+    bzero((char *) &serv_addr, sizeof(serv_addr));//could use memset, but it may bring the crash
+    serv_addr.sin_family = AF_INET; //set the adress
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
+    serv_addr.sin_port = htons(portno);//set theport
     if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr))<0)error("ERROR on binding");
 	listen(sockfd,5); // Create a client connection queue
 	return (sockfd);
 }
 
-void authServer(int sockFD, const char * authCode)
+void authServer(int sockFD, const char * authCode)//from the Server.c of the lecture
 { 
 	char buffer[256],badACK[256];
 	int n;
@@ -55,13 +64,13 @@ void authServer(int sockFD, const char * authCode)
 }
 
 
-int receive(char str[], int sockFD)
+int receive(char str[], int sockFD)//from the Cleint.c of the lecture
 {    
 	char buffer[200]; //get a buffer
 	int a = 1,n;
 	while(a) //do a loop 
 	{
-		/* Transmission one, read data */
+		//Transmission one, read data 
 		bzero(buffer,200);
 	    n = read(sockFD,buffer,199);
 		if(strcmp(buffer,"exit")==0)a=0;
@@ -82,19 +91,15 @@ int sendString(char str[], int sockFD)
 	fp = fmemopen(str,strlen(str)+1,"r");
 	int n;
 	char buffer[256];
-	/* Transmission of files */
+	// Transmission of files
     bzero(buffer,256);
 	while(fgets(buffer,255,fp))
-	{ // send pTextFile
-		/* Transmit data */
+	{ 
     	n = write(sockFD,buffer,strlen(buffer));
     	if(n < 0)error("ERROR writing to socket");
-    
-		/* Receive acks */
 		bzero(buffer,256);
 		n = read(sockFD,buffer,255);
 		if (n < 0)error("ERROR reading from socket");
-    
 		bzero(buffer,256);
 	}
 	
@@ -110,11 +115,13 @@ int sendString(char str[], int sockFD)
 	return (0);
 	fclose(fp);
 }
-
+//have problem with sending string, this one is from piazza and chegg.com. I create the top part, did not 
+//realized have to do that one outside the loop.
 
 /*******************************************************************************************************
         encrypted the code funtion. Will change to decrypted in dec_d file.
         We need to chnage the letter to number and do some funtion and then chnage back to letters.
+        The idea of this is from the piazza.
 *******************************************************************************************************/
 
 //chnage the number back to the letter
@@ -151,6 +158,7 @@ char codeChar(char letter,char key)
 
 /*******************************************************************************************************
         end with helper funtions. start the main funtion
+        Just write the main as the outline. 
         
 *******************************************************************************************************/
 
