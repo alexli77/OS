@@ -28,25 +28,16 @@ void error(const char *msg)
 
 int sockSetup(int portno) // some part are from client.c and server.c
 {
-    int sockfd; 
-	struct sockaddr_in serverAddress; // server address struct
-	struct hostent *server = gethostbyname("localhost"); // get host 
-	if (server == NULL)
-        error("ERROR, no such host\n"); // error if there is no host 
-	
-    // Set up the socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); // Create the socket
-	if (sockfd < 0)
-        error("ERROR opening socket"); 
-	
-	/* setup server address struct */ 
-	bzero((char *) &serverAddress, sizeof(serverAddress)); // Clear out the address struct
-    serverAddress.sin_family = AF_INET; // Create a network-capable socket
-    serverAddress.sin_port = htons(portno); // store the number
-	memcpy((char*)&serverAddress.sin_addr.s_addr, (char*)server->h_addr, server->h_length); // Copy in the address
-	
-	/* Connect to socket, from the client.c */	
-	if (connect(sockfd,(struct sockaddr *)&serverAddress,sizeof(serverAddress))<0)error("ERROR connecting");
+	int sockfd;
+    struct sockaddr_in serv_addr;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)error("ERROR opening socket");
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
+    if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr))<0)error("ERROR on binding");
+	listen(sockfd,5); // Create a client connection queue
 	return (sockfd);
 }
 
@@ -85,20 +76,6 @@ int receive(char str[], int sockFD)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int sendString(char str[], int sockFD)
 {
 	FILE * fp;
@@ -134,14 +111,22 @@ int sendString(char str[], int sockFD)
 	fclose(fp);
 }
 
-int numAlph(int num)
+
+/*******************************************************************************************************
+        encrypted the code funtion. Will change to decrypted in dec_d file.
+        We need to chnage the letter to number and do some funtion and then chnage back to letters.
+*******************************************************************************************************/
+
+//chnage the number back to the letter
+int numAscii(int num)
 {
 	if(num == 26)
 		return (32);
 	return (num + 65);
 }
 
-int alphNum(char aChar)
+//change the letter to number
+int asciiNum(char aChar)
 {
 	if(aChar == 32)
 		return (26);
@@ -149,47 +134,19 @@ int alphNum(char aChar)
 }
 
 
-
+//the funtion chnage the numbers. 
 char codeChar(char letter,char key)
 {
 	char cipher;
-	cipher = numAlph((alphNum(letter)+alphNum(key))%27);
+    
+	cipher = numAscii((asciiNum(letter)+asciiNum(key))%27);
+    // it will be using modulo 27 operations: your 27 characters are the 26 capital letters
+    
 	return (cipher);
 }
+//we need to keep this funtion as a comment in  dec_d file, so we can know how to chnage it back. 
 
-char decodeChar(char cipher,char key)
-{
-	char decodedLetter;
-	if((alphNum(cipher) - alphNum(key)) < 0)
-		decodedLetter = numAlph(27+(alphNum(cipher)-alphNum(key)));
-	else
-		decodedLetter = numAlph((alphNum(cipher)-alphNum(key))%27);
-	return (decodedLetter);
-}
 
-void codeString(char pText[],char keyText[], char cText[])
-{
-	int i = -1;
-	do{
-	i+=1;
-	if(pText[i]!='\0' && pText[i]!='\n')cText[i]=codeChar(pText[i],keyText[i]);
-	else cText[i] = '\0';
-	}while(pText[i]!='\0');
-}
-int servSockSetup(portno)
-{
-	int sockfd;
-    struct sockaddr_in serv_addr;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)error("ERROR opening socket");
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
-    if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr))<0)error("ERROR on binding");
-	listen(sockfd,5); // Create a client connection queue
-	return (sockfd);
-}
 
 
 /*******************************************************************************************************
@@ -202,12 +159,12 @@ int main(int argc, char *argv[])
     char pText[300000];
 	char keyText[300000];
 	char cipherText[300000];
-    
+    char cText[0];
 	/* Check port was provided */
     if(argc < 2)error("ERROR, no port provided\n");
 
     int clientSockFD; // client socket number
-	int sockfd = servSockSetup(atoi(argv[1])); // setup socket
+	int sockfd = sockSetup(atoi(argv[1])); // setup socket
 
     socklen_t clilen; // Client address length 
 	struct sockaddr_in cli_addr; // set address
@@ -224,13 +181,18 @@ int main(int argc, char *argv[])
 		if(fork()==0)
 		{ 		
 			authServer(clientSockFD,"encAck"); // send one time auth code
-			
-	        receive(pText,clientSockFD);
+            receive(pText,clientSockFD);
 	        receive(keyText,clientSockFD);
-			codeString(pText,keyText,cipherText);
-            sendString(cipherText,clientSockFD);
-            
-            
+            //use a do while to get the change.
+            int i = -1;
+	     do{
+	         i+=1;
+	         if(pText[i]!='\0' && pText[i]!='\n')
+                cText[i]=codeChar(pText[i],keyText[i]);
+	          else cText[i] = '\0';
+        	}while(pText[i]!='\0');
+            //finished with do while
+            sendString(cipherText,clientSockFD); 
             exit(0);
 			close(clientSockFD);
 		}
